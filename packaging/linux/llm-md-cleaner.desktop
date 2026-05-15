@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=LLM MD Cleaner
+GenericName=Markdown Cleanup Utility
+Comment=A native Markdown cleanup utility for copied LLM output, broken code fences, flattened tables, & other LLM linsey-woolsey [nonsense].
+Exec=llm-md-cleaner
+Icon=llm-md-cleaner
+Terminal=false
+Categories=Utility;TextEditor;Development;
+Keywords=markdown;llm;cleanup;github;wiki;text;formatter;
+StartupNotify=true

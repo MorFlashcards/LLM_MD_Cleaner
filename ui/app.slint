@@ -1,0 +1,511 @@
+import { Button, VerticalBox, HorizontalBox, TextEdit } from "std-widgets.slint";
+
+component MenuButton inherits Rectangle {
+    in property <string> label: "";
+    in property <brush> menu_text_fg: #d7d4cf;
+    in property <brush> menu_hover_text_fg: #a77be8;
+    in property <brush> menu_bg: #14151c;
+    in property <brush> menu_hover_bg: #181920;
+    in property <brush> menu_border: #2f3140;
+    in property <string> menu_font_family: "IM FELL English";
+    callback activated();
+
+    height: 28px;
+    min-width: 72px;
+    background: touch.has-hover ? root.menu_hover_bg : root.menu_bg;
+    border-width: 1px;
+    border-color: root.menu_border;
+
+    Text {
+        text: root.label;
+        color: touch.has-hover ? root.menu_hover_text_fg : root.menu_text_fg;
+        font-family: root.menu_font_family;
+        font-size: 13px;
+        horizontal-alignment: center;
+        vertical-alignment: center;
+    }
+
+    touch := TouchArea {
+        clicked => { root.activated(); }
+    }
+}
+
+export component AppWindow inherits Window {
+    title: root.window_title;
+    // Use preferred size instead of fixed size so the desktop window stays resizable/maximizable[cite: 2].
+    preferred-width: root.window_width;
+    preferred-height: root.window_height;
+    min-width: root.window_min_width;
+    min-height: root.window_min_height;
+    background: root.app_bg;
+
+    // ------------------------------------------------------------
+    // Content state
+    // ------------------------------------------------------------
+
+    in-out property <string> input_text: "";
+    in-out property <string> output_text: "";
+    in-out property <string> status_text: "Paste messy LLM / GitHub / HTML-markdown sludge on the left, then clean it.";
+
+    // ------------------------------------------------------------
+    // Window text
+    // ------------------------------------------------------------
+
+    in-out property <string> window_title: "LLM MD Cleaner";
+    in-out property <string> app_title: "LLM MD Cleaner";
+    in-out property <string> app_subtitle: "A native Markdown cleanup utility for copied LLM output, broken code fences, flattened tables, & other LLM linsey-woolsey [nonsense].";
+    in-out property <string> input_heading: "Messy Input";
+    in-out property <string> input_hint: "Paste from ChatGPT, GitHub, browser copy, or wiki preview.";
+    in-out property <string> output_heading: "Clean Markdown";
+    in-out property <string> output_hint: "Copy this into where you want your markdown";
+    in-out property <string> footer_text: "LLM output in → cleaned Markdown out.";
+
+    // ------------------------------------------------------------
+    // Button labels
+    // ------------------------------------------------------------
+
+    in-out property <string> clean_button_text: "Clean Markdown";
+    in-out property <string> copy_button_text: "Copy Output";
+    in-out property <string> clear_button_text: "Clear";
+
+    // ------------------------------------------------------------
+    // Theme colors
+    // ------------------------------------------------------------
+
+    in-out property <brush> app_bg: #222129;
+    in-out property <brush> toolbar_bg: #2b2933;
+    in-out property <brush> panel_bg: #18171d;
+    in-out property <brush> theme_border: #3a3744;
+    in-out property <brush> theme_divider: #4a4558;
+    in-out property <brush> heading_fg: #a9aae2;
+    in-out property <brush> body_fg: #bc8d6b;
+    in-out property <brush> muted_fg: #8f879f;
+
+    // ------------------------------------------------------------
+    // Fonts
+    // ------------------------------------------------------------
+
+    in-out property <string> ui_font_family: "IM FELL English";
+    in-out property <string> editor_font_family: "monospace";
+
+    in-out property <length> title_font_size: 30px;
+    in-out property <length> subtitle_font_size: 15px;
+    in-out property <length> heading_font_size: 18px;
+    in-out property <length> hint_font_size: 13px;
+    in-out property <length> status_font_size: 14px;
+    in-out property <length> editor_font_size: 14px;
+    in-out property <length> footer_font_size: 13px;
+
+    // ------------------------------------------------------------
+    // Layout sizing
+    // ------------------------------------------------------------
+
+    in-out property <length> window_width: 1180px;
+    in-out property <length> window_height: 820px;
+    in-out property <length> window_min_width: 1130px;
+    in-out property <length> window_min_height: 640px;
+
+    in-out property <length> root_padding: 30px;
+    in-out property <length> root_spacing: 16px;
+
+    // Fixed content viewport: stable, centered, and no layout recursion.
+    // 520px + 14px + 520px = 1054px.
+    in-out property <length> viewport_width: 1054px;
+
+    in-out property <length> menu_bar_height: 40px;
+    in-out property <length> menu_bar_padding_horizontal: 8px;
+    in-out property <length> menu_bar_spacing: 8px;
+
+    in-out property <length> header_spacing: 4px;
+    in-out property <length> toolbar_height: 52px;
+    in-out property <length> toolbar_padding_horizontal: 12px;
+    in-out property <length> toolbar_padding_vertical: 8px;
+    in-out property <length> toolbar_spacing: 10px;
+    in-out property <length> editor_panel_width: 520px;
+    in-out property <length> editor_panel_min_height: 430px;
+    in-out property <length> editor_inner_padding: 10px;
+
+    in-out property <length> panel_spacing: 8px;
+    in-out property <length> split_spacing: 14px;
+    in-out property <length> heading_row_spacing: 8px;
+    in-out property <length> heading_row_height: 30px;
+    in-out property <length> input_hint_x: 120px;
+    in-out property <length> output_hint_x: 220px;
+
+    in-out property <length> footer_height: 34px;
+    in-out property <length> footer_text_x: 12px;
+    in-out property <length> footer_text_y: 7px;
+
+    // ------------------------------------------------------------
+    // Callbacks
+    // ------------------------------------------------------------
+
+    callback clean_requested();
+    callback copy_requested();
+
+    // Theme and Font Callbacks
+    callback theme_system_requested();
+    callback theme_moribund_requested();
+    callback theme_dark_requested();
+    callback theme_light_requested();
+    callback editor_font_default_requested();
+    callback editor_font_monospace_requested();
+    callback editor_font_larger_requested();
+    callback editor_font_smaller_requested();
+    callback editor_font_upload_requested();
+    callback editor_font_family_changed(string);
+
+    VerticalBox {
+        width: 100%;
+        height: 100%;
+        spacing: 0px;
+
+        // Custom Moribund menu row.
+        // This replaces Slint's native MenuBar so the menu color is controlled by the app theme.
+        Rectangle {
+            height: root.menu_bar_height;
+            background: root.toolbar_bg;
+            border-width: 1px;
+            border-color: root.theme_border;
+
+            HorizontalBox {
+                padding-left: root.menu_bar_padding_horizontal;
+                padding-right: root.menu_bar_padding_horizontal;
+                spacing: root.menu_bar_spacing;
+                alignment: start;
+
+                Text {
+                    text: "Theme";
+                    color: root.muted_fg;
+                    font-family: root.ui_font_family;
+                    font-size: 13px;
+                    vertical-alignment: center;
+                }
+
+                MenuButton {
+                    label: "System";
+                    menu_font_family: root.ui_font_family;
+                    menu_text_fg: root.body_fg;
+                    menu_hover_text_fg: root.heading_fg;
+                    menu_bg: root.toolbar_bg;
+                    menu_hover_bg: root.panel_bg;
+                    menu_border: root.theme_border;
+                    activated => { root.theme_system_requested(); }
+                }
+
+                MenuButton {
+                    label: "Moribund";
+                    min-width: 86px;
+                    menu_font_family: root.ui_font_family;
+                    menu_text_fg: root.body_fg;
+                    menu_hover_text_fg: root.heading_fg;
+                    menu_bg: root.toolbar_bg;
+                    menu_hover_bg: root.panel_bg;
+                    menu_border: root.theme_border;
+                    activated => { root.theme_moribund_requested(); }
+                }
+
+                MenuButton {
+                    label: "Dark";
+                    menu_font_family: root.ui_font_family;
+                    menu_text_fg: root.body_fg;
+                    menu_hover_text_fg: root.heading_fg;
+                    menu_bg: root.toolbar_bg;
+                    menu_hover_bg: root.panel_bg;
+                    menu_border: root.theme_border;
+                    activated => { root.theme_dark_requested(); }
+                }
+
+                MenuButton {
+                    label: "Light";
+                    menu_font_family: root.ui_font_family;
+                    menu_text_fg: root.body_fg;
+                    menu_hover_text_fg: root.heading_fg;
+                    menu_bg: root.toolbar_bg;
+                    menu_hover_bg: root.panel_bg;
+                    menu_border: root.theme_border;
+                    activated => { root.theme_light_requested(); }
+                }
+
+                Rectangle {
+                    width: 1px;
+                    background: root.theme_divider;
+                }
+
+                Text {
+                    text: "Editor Font";
+                    color: root.muted_fg;
+                    font-family: root.ui_font_family;
+                    font-size: 13px;
+                    vertical-alignment: center;
+                }
+
+                MenuButton {
+                    label: "Default";
+                    min-width: 76px;
+                    menu_font_family: root.ui_font_family;
+                    menu_text_fg: root.body_fg;
+                    menu_hover_text_fg: root.heading_fg;
+                    menu_bg: root.toolbar_bg;
+                    menu_hover_bg: root.panel_bg;
+                    menu_border: root.theme_border;
+                    activated => { root.editor_font_default_requested(); }
+                }
+
+                MenuButton {
+                    label: "Monospace";
+                    min-width: 90px;
+                    menu_font_family: root.ui_font_family;
+                    menu_text_fg: root.body_fg;
+                    menu_hover_text_fg: root.heading_fg;
+                    menu_bg: root.toolbar_bg;
+                    menu_hover_bg: root.panel_bg;
+                    menu_border: root.theme_border;
+                    activated => { root.editor_font_monospace_requested(); }
+                }
+
+                MenuButton {
+                    label: "+";
+                    min-width: 34px;
+                    menu_font_family: root.ui_font_family;
+                    menu_text_fg: root.body_fg;
+                    menu_hover_text_fg: root.heading_fg;
+                    menu_bg: root.toolbar_bg;
+                    menu_hover_bg: root.panel_bg;
+                    menu_border: root.theme_border;
+                    activated => { root.editor_font_larger_requested(); }
+                }
+
+                MenuButton {
+                    label: "-";
+                    min-width: 34px;
+                    menu_font_family: root.ui_font_family;
+                    menu_text_fg: root.body_fg;
+                    menu_hover_text_fg: root.heading_fg;
+                    menu_bg: root.toolbar_bg;
+                    menu_hover_bg: root.panel_bg;
+                    menu_border: root.theme_border;
+                    activated => { root.editor_font_smaller_requested(); }
+                }
+
+                MenuButton {
+                    label: "Upload...";
+                    min-width: 86px;
+                    menu_font_family: root.ui_font_family;
+                    menu_text_fg: root.body_fg;
+                    menu_hover_text_fg: root.heading_fg;
+                    menu_bg: root.toolbar_bg;
+                    menu_hover_bg: root.panel_bg;
+                    menu_border: root.theme_border;
+                    activated => { root.editor_font_upload_requested(); }
+                }
+            }
+        }
+
+        HorizontalBox {
+            padding: root.root_padding;
+            alignment: center;
+            vertical-stretch: 1;
+
+            VerticalBox {
+                width: root.viewport_width;
+                height: 100%;
+                spacing: root.root_spacing;
+
+                // Header
+                VerticalBox {
+                    spacing: root.header_spacing;
+                    Text {
+                        text: root.app_title;
+                        font-family: root.ui_font_family;
+                        font-size: root.title_font_size;
+                        font-weight: 700;
+                        color: root.heading_fg;
+                    }
+
+                    Text {
+                        text: root.app_subtitle;
+                        font-family: root.ui_font_family;
+                        font-size: root.subtitle_font_size;
+                        color: root.body_fg;
+                        wrap: word-wrap;
+                    }
+                }
+
+                // Toolbar
+                Rectangle {
+                    height: root.toolbar_height;
+                    background: root.toolbar_bg;
+                    border-width: 1px;
+                    border-color: root.theme_border;
+
+                    HorizontalBox {
+                        padding-left: root.toolbar_padding_horizontal;
+                        padding-right: root.toolbar_padding_horizontal;
+                        padding-top: root.toolbar_padding_vertical;
+                        padding-bottom: root.toolbar_padding_vertical;
+                        spacing: root.toolbar_spacing;
+
+                        Button {
+                            min-width: 190px;
+                            text: root.clean_button_text;
+                            clicked => { root.clean_requested(); }
+                        }
+
+                        Button {
+                            min-width: 190px;
+                            text: root.copy_button_text;
+                            clicked => { root.copy_requested(); }
+                        }
+
+                        Button {
+                            min-width: 150px;
+                            text: root.clear_button_text;
+                            clicked => {
+                                root.input_text = "";
+                                root.output_text = "";
+                                root.status_text = "Cleared. Ready for fresh ritual debris.";
+                            }
+                        }
+
+                        Rectangle {
+                            width: 1px;
+                            background: root.theme_divider;
+                        }
+
+                        Text {
+                            horizontal-stretch: 1;
+                            text: root.status_text;
+                            font-family: root.ui_font_family;
+                            color: root.body_fg;
+                            font-size: root.status_font_size;
+                            vertical-alignment: center;
+                            wrap: word-wrap;
+                        }
+                    }
+                }
+
+                // Main split editor area
+                Rectangle {
+                    width: root.viewport_width;
+                    height: 100%;
+                    vertical-stretch: 1;
+                    background: root.app_bg;
+
+                    // Input panel
+                    Rectangle {
+                        x: 0px;
+                        y: 0px;
+                        width: root.editor_panel_width;
+                        height: parent.height;
+                        background: root.app_bg;
+
+                        Text {
+                            x: 0px;
+                            y: 0px;
+                            text: root.input_heading;
+                            font-family: root.ui_font_family;
+                            font-size: root.heading_font_size;
+                            font-weight: 700;
+                            color: root.heading_fg;
+                        }
+
+                        Text {
+                            x: root.input_hint_x;
+                            y: 4px;
+                            width: root.editor_panel_width - root.input_hint_x;
+                            text: root.input_hint;
+                            font-family: root.ui_font_family;
+                            font-size: root.hint_font_size;
+                            color: root.muted_fg;
+                        }
+
+                        Rectangle {
+                            x: 0px;
+                            y: root.heading_row_height + root.panel_spacing;
+                            background: root.panel_bg;
+                            border-width: 1px;
+                            border-color: root.theme_border;
+                            width: root.editor_panel_width;
+                            height: parent.height - root.heading_row_height - root.panel_spacing;
+                            TextEdit {
+                                text <=> root.input_text;
+                                width: parent.width - (root.editor_inner_padding * 2);
+                                height: parent.height - (root.editor_inner_padding * 2);
+                                x: root.editor_inner_padding;
+                                y: root.editor_inner_padding;
+                                font-family: root.editor_font_family;
+                                font-size: root.editor_font_size;
+                            }
+                        }
+                    }
+
+                    // Output panel
+                    Rectangle {
+                        x: root.editor_panel_width + root.split_spacing;
+                        y: 0px;
+                        width: root.editor_panel_width;
+                        height: parent.height;
+                        background: root.app_bg;
+
+                        Text {
+                            x: 0px;
+                            y: 0px;
+                            text: root.output_heading;
+                            font-family: root.ui_font_family;
+                            font-size: root.heading_font_size;
+                            font-weight: 700;
+                            color: root.heading_fg;
+                        }
+
+                        Text {
+                            x: root.output_hint_x;
+                            y: 4px;
+                            width: root.editor_panel_width - root.output_hint_x;
+                            text: root.output_hint;
+                            font-family: root.ui_font_family;
+                            font-size: root.hint_font_size;
+                            color: root.muted_fg;
+                        }
+
+                        Rectangle {
+                            x: 0px;
+                            y: root.heading_row_height + root.panel_spacing;
+                            background: root.panel_bg;
+                            border-width: 1px;
+                            border-color: root.theme_border;
+                            width: root.editor_panel_width;
+                            height: parent.height - root.heading_row_height - root.panel_spacing;
+                            TextEdit {
+                                text <=> root.output_text;
+                                width: parent.width - (root.editor_inner_padding * 2);
+                                height: parent.height - (root.editor_inner_padding * 2);
+                                x: root.editor_inner_padding;
+                                y: root.editor_inner_padding;
+                                font-family: root.editor_font_family;
+                                font-size: root.editor_font_size;
+                            }
+                        }
+                    }
+                }
+
+                // Footer
+                Rectangle {
+                    height: root.footer_height;
+                    background: root.panel_bg;
+                    border-width: 1px;
+                    border-color: root.theme_border;
+
+                    Text {
+                        text: root.footer_text;
+                        font-family: root.ui_font_family;
+                        x: root.footer_text_x;
+                        y: root.footer_text_y;
+                        color: root.muted_fg;
+                        font-size: root.footer_font_size;
+                    }
+                }
+            }
+        }
+    }
+}

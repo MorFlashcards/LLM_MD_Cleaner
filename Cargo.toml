@@ -1,0 +1,19 @@
+[package]
+name = "llm_md_cleaner"
+version = "0.1.0"
+edition = "2021"
+build = "build.rs"
+
+[dependencies]
+slint = { version = "1.16.1", features = ["unstable-fontique-08"] }
+regex = "1.12.3"
+html-escape = "0.2.13"
+arboard = "3.6.1"
+serde = { version = "1.0", features = ["derive"] }
+toml = "0.8"
+rfd = "0.17.2"
+directories = "5"
+ttf-parser = "0.25.1"
+
+[build-dependencies]
+slint-build = "1.16.1"
