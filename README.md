@@ -32,14 +32,18 @@ Download packages from the latest release:
 
 ```bash
 sudo apt install ./llm-md-cleaner_0.1.0_amd64.deb
-Arch Linux
+```
+### Arch Linux
+```
 sudo pacman -U ./llm-md-cleaner-0.1.0-1-x86_64.pkg.tar.zst
+```
 Run
 llm-md-cleaner
 Build from source
 cargo build --release
 ./target/release/llm_md_cleaner
+
 License
 
 LLM MD Cleaner is licensed under GPL-3.0-only.
-```
+
