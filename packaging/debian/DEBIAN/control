@@ -1,0 +1,11 @@
+Package: llm-md-cleaner
+Version: 0.1.0
+Section: utils
+Priority: optional
+Architecture: amd64
+Maintainer: Moribund Murdoch <moribundmurdoch@gmail.com>
+Depends: libc6, libgcc-s1
+Homepage: https://github.com/MorFlashcards/LLM_MD_Cleaner
+Description: A native Markdown cleanup utility for copied LLM output
+ LLM MD Cleaner cleans copied LLM output, broken code fences,
+ flattened tables, and other LLM linsey-woolsey nonsense.

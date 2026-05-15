@@ -1,0 +1,44 @@
+# Maintainer: Moribund Murdoch <moribundmurdoch@gmail.com>
+
+pkgname=llm-md-cleaner
+pkgver=0.1.0
+pkgrel=1
+pkgdesc="A native Markdown cleanup utility for copied LLM output, broken code fences, flattened tables, & other LLM linsey-woolsey [nonsense]."
+arch=('x86_64')
+url="https://github.com/MorFlashcards/LLM_MD_Cleaner"
+license=('GPL-3.0-only')
+depends=('gcc-libs')
+makedepends=('cargo')
+source=()
+sha256sums=()
+
+_project_root() {
+    realpath "$startdir/../.."
+}
+
+build() {
+    cd "$(_project_root)"
+    cargo build --release --locked
+}
+
+package() {
+    cd "$(_project_root)"
+
+    install -Dm755 "target/release/llm_md_cleaner" "$pkgdir/usr/bin/llm-md-cleaner"
+
+    install -Dm644 "packaging/linux/llm-md-cleaner.desktop" \
+        "$pkgdir/usr/share/applications/llm-md-cleaner.desktop"
+
+    for size in 16 24 32 48 64 128 256 512 1024; do
+        install -Dm644 "assets/icons/hicolor/${size}x${size}/apps/llm-md-cleaner.png" \
+            "$pkgdir/usr/share/icons/hicolor/${size}x${size}/apps/llm-md-cleaner.png"
+    done
+
+    install -Dm644 "assets/config/theme.toml" \
+        "$pkgdir/usr/share/llm-md-cleaner/config/theme.toml"
+
+    install -Dm644 "assets/fonts/IMFellEnglish-Regular.ttf" \
+        "$pkgdir/usr/share/llm-md-cleaner/fonts/IMFellEnglish-Regular.ttf"
+
+    install -Dm644 "LICENSE" "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+}
