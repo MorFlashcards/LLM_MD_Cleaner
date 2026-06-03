@@ -4,6 +4,10 @@ use slint::ComponentHandle;
 use std::cell::RefCell;
 use std::rc::Rc;
 
+const MIN_EDITOR_FONT_SIZE: f32 = 8.0;
+const SYSTEM_THEME: &str = "system";
+const NATIVE_SLINT_STYLE: &str = "native";
+
 type SharedConfig = Rc<RefCell<theme::ThemeConfig>>;
 
 pub fn run() -> Result<(), slint::PlatformError> {
@@ -14,8 +18,7 @@ pub fn run() -> Result<(), slint::PlatformError> {
     }
 
     let ui = AppWindow::new()?;
-    theme::apply_active_theme(&ui, &config);
-    theme::apply_fonts(&ui, &config);
+    apply_startup_appearance(&ui, &config);
 
     let shared_config = Rc::new(RefCell::new(config));
 
@@ -27,25 +30,43 @@ pub fn run() -> Result<(), slint::PlatformError> {
     ui.run()
 }
 
+fn apply_startup_appearance(ui: &AppWindow, config: &theme::ThemeConfig) {
+    if config.active_theme == SYSTEM_THEME {
+        ui.set_ui_font_family("".into());
+        ui.set_editor_font_family("".into());
+    } else {
+        theme::apply_active_theme(ui, config);
+        theme::apply_fonts(ui, config);
+    }
+}
+
 fn wire_core_callbacks(ui: &AppWindow) {
+    wire_clean_callback(ui);
+    wire_copy_callback(ui);
+}
+
+fn wire_clean_callback(ui: &AppWindow) {
     let weak = ui.as_weak();
+
     ui.on_clean_requested(move || {
         let ui = weak.unwrap();
         let input = ui.get_input_text().to_string();
         let cleaned = clean_markdown(&input);
 
-        ui.set_status_text(
-            format!(
-                "Cleaned {} input characters into {} output characters.",
-                input.chars().count(),
-                cleaned.chars().count()
-            )
-            .into(),
+        let status = format!(
+            "Cleaned {} input characters into {} output characters.",
+            input.chars().count(),
+            cleaned.chars().count()
         );
-        ui.set_output_text(cleaned.into());
-    });
 
+        ui.set_output_text(cleaned.into());
+        ui.set_status_text(status.into());
+    });
+}
+
+fn wire_copy_callback(ui: &AppWindow) {
     let weak = ui.as_weak();
+
     ui.on_copy_requested(move || {
         let ui = weak.unwrap();
         let output = ui.get_output_text().to_string();
@@ -55,11 +76,15 @@ fn wire_core_callbacks(ui: &AppWindow) {
             return;
         }
 
-        match arboard::Clipboard::new().and_then(|mut clipboard| clipboard.set_text(output)) {
-            Ok(_) => ui.set_status_text("Copied cleaned Markdown to clipboard.".into()),
+        match copy_to_clipboard(output) {
+            Ok(()) => ui.set_status_text("Copied cleaned Markdown to clipboard.".into()),
             Err(err) => ui.set_status_text(format!("Clipboard error: {err}").into()),
         }
     });
+}
+
+fn copy_to_clipboard(text: String) -> Result<(), arboard::Error> {
+    arboard::Clipboard::new()?.set_text(text)
 }
 
 fn wire_theme_callbacks(ui: &AppWindow, config: SharedConfig) {
@@ -76,27 +101,30 @@ fn wire_theme_callbacks(ui: &AppWindow, config: SharedConfig) {
     ui.on_theme_light_requested(move || set_active_theme(&weak.unwrap(), &cfg, "light"));
 
     let weak = ui.as_weak();
-    ui.on_theme_system_requested(move || {
-        let ui = weak.unwrap();
-        let mut cfg = config.borrow_mut();
-
-        ui.set_ui_font_family("".into());
-        ui.set_editor_font_family("".into());
-        ui.set_status_text(
-            "System / Native mode selected. Restart with SLINT_STYLE=native for deeper platform styling."
-                .into(),
-        );
-
-        cfg.active_theme = "system".to_string();
-        cfg.slint_style = "native".to_string();
-        theme::save(&cfg);
-    });
+    ui.on_theme_system_requested(move || set_system_theme(&weak.unwrap(), &config));
 }
 
 fn set_active_theme(ui: &AppWindow, config: &SharedConfig, theme_name: &str) {
     let mut cfg = config.borrow_mut();
+
     cfg.active_theme = theme_name.to_string();
     theme::apply_active_theme(ui, &cfg);
+    theme::apply_fonts(ui, &cfg);
+    theme::save(&cfg);
+}
+
+fn set_system_theme(ui: &AppWindow, config: &SharedConfig) {
+    let mut cfg = config.borrow_mut();
+
+    ui.set_ui_font_family("".into());
+    ui.set_editor_font_family("".into());
+    ui.set_status_text(
+        "System / Native mode selected. Restart with SLINT_STYLE=native for deeper platform styling."
+            .into(),
+    );
+
+    cfg.active_theme = SYSTEM_THEME.to_string();
+    cfg.slint_style = NATIVE_SLINT_STYLE.to_string();
     theme::save(&cfg);
 }
 
@@ -134,8 +162,8 @@ fn set_editor_font(ui: &AppWindow, config: &SharedConfig, family: &str, label: &
 
 fn adjust_editor_font_size(ui: &AppWindow, config: &SharedConfig, delta: f32) {
     let mut cfg = config.borrow_mut();
-    cfg.editor_font_size = (cfg.editor_font_size + delta).max(8.0);
 
+    cfg.editor_font_size = (cfg.editor_font_size + delta).max(MIN_EDITOR_FONT_SIZE);
     ui.set_editor_font_size(cfg.editor_font_size);
 
     if delta.is_sign_positive() {
