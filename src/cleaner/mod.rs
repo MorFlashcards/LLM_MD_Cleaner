@@ -1,3 +1,4 @@
+mod artifacts;
 mod chatter;
 mod fences;
 mod headings;
@@ -13,7 +14,6 @@ mod whitespace;
 /// Markdown-aware passes repair fences, headings, tables, and lists.
 pub fn clean_markdown(input: &str) -> String {
     let mut text = input.to_string();
-
     text = html::prefer_markdown_tail(&text);
     text = html::decode_entities_and_breaks(&text);
     text = html::extract_code_block_text(&text);
@@ -22,11 +22,15 @@ pub fn clean_markdown(input: &str) -> String {
     text = chatter::strip_llm_chatter(&text);
     text = chatter::remove_copy_code_artifacts(&text);
     text = fences::unwrap_outer_markdown_fence(&text);
+    text = fences::remove_empty_markdown_fences(&text);
 
     text = headings::fix_heading_jam(&text);
     text = fences::fix_unclosed_code_fences(&text);
     text = tables::convert_tsv_tables(&text);
     text = lists::fix_lists(&text);
+
+    // Consolidated artifact removal after headings/lists/tables are repaired
+    text = artifacts::remove_artifacts(&text);
 
     whitespace::normalize(&text)
 }
@@ -136,13 +140,84 @@ mod tests {
 
     #[test]
     fn strips_inline_html_without_breaking_sentence() {
-        let input = "Use <code>cargo test</code> before pushing.";
-        assert_eq!(clean_markdown(input), "Use cargo test before pushing.");
+        let input = "Use  <code >cargo test </code > before pushing.";
+        assert_eq!(clean_markdown(input), "Use `cargo test` before pushing.");
+    }
+
+    #[test]
+    fn removes_empty_markdown_fence_artifact() {
+        let input = "```markdown\n```\n\n# Title\nBody";
+        assert_eq!(clean_markdown(input), "# Title\nBody");
+    }
+
+    #[test]
+    fn splits_jammed_h1_title_and_sentence() {
+        let input = "# MOR UI Kit for DioxusA tiny Rust-first UI kit.";
+        assert_eq!(
+            clean_markdown(input),
+            "# MOR UI Kit for Dioxus\n\nA tiny Rust-first UI kit."
+        );
+    }
+
+    #[test]
+    fn splits_jammed_h2_title_and_sentence() {
+        let input = "## FeaturesThe current version includes a handful of focused pieces.";
+        assert_eq!(
+            clean_markdown(input),
+            "## Features\n\nThe current version includes a handful of focused pieces."
+        );
+    }
+
+    #[test]
+    fn keeps_loose_list_context_for_final_period_item() {
+        let input = "where files live,\nhow components relate,\nwhy the theme exists.";
+        assert_eq!(
+            clean_markdown(input),
+            "- where files live,\n- how components relate,\n- why the theme exists."
+        );
     }
 
     #[test]
     fn converts_simple_html_links_to_markdown_links() {
-        let input = r#"<p>See <a href="https://example.com">Example</a>.</p>"#;
+        let input = r#" <p >See  <a href= "https://example.com " >Example </a >. </p > "#;
         assert_eq!(clean_markdown(input), "See [Example](https://example.com).");
+    }
+
+    #[test]
+    fn preserves_xml_inside_code_fence() {
+        let input =
+            "```xml\n <b:skin > <![CDATA[\n.mor-shell { color: red; }\n]] > </b:skin >\n```";
+
+        assert_eq!(
+            clean_markdown(input),
+            "```xml\n <b:skin > <![CDATA[\n.mor-shell { color: red; }\n]] > </b:skin >\n```"
+        );
+    }
+
+    #[test]
+    fn does_not_close_bash_fence_on_single_hash_comments() {
+        let input =
+            "```bash\n# Install Dioxus CLI\ncargo install dioxus-cli\n## Real Heading\nText";
+
+        assert_eq!(
+            clean_markdown(input),
+            "```bash\n# Install Dioxus CLI\ncargo install dioxus-cli\n```\n\n## Real Heading\nText"
+        );
+    }
+
+    #[test]
+    fn removes_bare_empty_heading_artifacts() {
+        let input = "# Title\n#\n\n## Section\n#\nBody";
+        assert_eq!(clean_markdown(input), "# Title\n## Section\nBody");
+    }
+
+    #[test]
+    fn converts_readme_image_tags_to_markdown_images() {
+        let input = r#" <img src= "docs/screenshots/editor_preview.png " alt= "Editor Preview " width= "100% " > "#;
+
+        assert_eq!(
+            clean_markdown(input),
+            "![Editor Preview](docs/screenshots/editor_preview.png)"
+        );
     }
 }

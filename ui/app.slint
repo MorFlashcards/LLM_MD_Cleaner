@@ -1,4 +1,4 @@
-import { Button, VerticalBox, HorizontalBox, TextEdit } from "std-widgets.slint";
+import { VerticalBox, HorizontalBox, TextEdit } from "std-widgets.slint";
 
 component MenuButton inherits Rectangle {
     in property <string> label: "";
@@ -30,9 +30,169 @@ component MenuButton inherits Rectangle {
     }
 }
 
+component ToolbarButton inherits Rectangle {
+    in property <string> label: "";
+    in property <length> button_min_width: 150px;
+    in property <brush> button_bg: #2b2933;
+    in property <brush> button_hover_bg: #18171d;
+    in property <brush> button_border: #3a3744;
+    in property <brush> button_text_fg: #d7d4cf;
+    in property <brush> button_hover_text_fg: #a9aae2;
+    in property <string> button_font_family: "IM FELL English";
+    callback activated();
+
+    height: 34px;
+    min-width: root.button_min_width;
+    background: touch.has-hover ? root.button_hover_bg : root.button_bg;
+    border-width: 1px;
+    border-color: root.button_border;
+
+    Text {
+        text: root.label;
+        color: touch.has-hover ? root.button_hover_text_fg : root.button_text_fg;
+        font-family: root.button_font_family;
+        font-size: 13px;
+        horizontal-alignment: center;
+        vertical-alignment: center;
+    }
+
+    touch := TouchArea {
+        clicked => { root.activated(); }
+    }
+}
+
+component HeaderBlock inherits Rectangle {
+    in property <string> title: "";
+    in property <string> subtitle: "";
+    in property <string> ui_font_family: "IM FELL English";
+    in property <brush> heading_fg: #a9aae2;
+    in property <brush> body_fg: #bc8d6b;
+    in property <length> title_font_size: 30px;
+    in property <length> subtitle_font_size: 15px;
+    in property <length> header_spacing: 4px;
+
+    height: 64px;
+    VerticalBox {
+        height: parent.height;
+        spacing: root.header_spacing;
+
+        Text {
+            text: root.title;
+            font-family: root.ui_font_family;
+            font-size: root.title_font_size;
+            font-weight: 700;
+            color: root.heading_fg;
+        }
+
+        Text {
+            text: root.subtitle;
+            font-family: root.ui_font_family;
+            font-size: root.subtitle_font_size;
+            color: root.body_fg;
+            wrap: word-wrap;
+        }
+    }
+}
+
+component EditorPane inherits Rectangle {
+    in property <string> heading: "";
+    in property <string> hint: "";
+    in-out property <string> editor_text: "";
+
+    in property <brush> app_bg: #222129;
+    in property <brush> panel_bg: #18171d;
+    in property <brush> theme_border: #3a3744;
+    in property <brush> heading_fg: #a9aae2;
+    in property <brush> muted_fg: #8f879f;
+
+    in property <string> ui_font_family: "IM FELL English";
+    in property <string> editor_font_family: "monospace";
+
+    in property <length> heading_font_size: 18px;
+    in property <length> hint_font_size: 13px;
+    in property <length> editor_font_size: 14px;
+    in property <length> heading_row_height: 30px;
+    in property <length> panel_spacing: 8px;
+    in property <length> editor_inner_padding: 10px;
+    in property <length> editor_panel_min_width: 360px;
+
+    min-width: root.editor_panel_min_width;
+    vertical-stretch: 1;
+    horizontal-stretch: 1;
+    background: root.app_bg;
+
+    VerticalBox {
+        height: parent.height;
+        spacing: root.panel_spacing;
+
+        HorizontalBox {
+            height: root.heading_row_height;
+            spacing: 8px;
+
+            Text {
+                text: root.heading;
+                font-family: root.ui_font_family;
+                font-size: root.heading_font_size;
+                font-weight: 700;
+                color: root.heading_fg;
+                vertical-alignment: center;
+            }
+
+            Text {
+                text: root.hint;
+                horizontal-stretch: 1;
+                font-family: root.ui_font_family;
+                font-size: root.hint_font_size;
+                color: root.muted_fg;
+                vertical-alignment: center;
+                wrap: word-wrap;
+            }
+        }
+
+        Rectangle {
+            vertical-stretch: 1;
+            background: root.panel_bg;
+            border-width: 1px;
+            border-color: root.theme_border;
+
+            TextEdit {
+                text <=> root.editor_text;
+                width: parent.width - (root.editor_inner_padding * 2);
+                height: parent.height - (root.editor_inner_padding * 2);
+                x: root.editor_inner_padding;
+                y: root.editor_inner_padding;
+                font-family: root.editor_font_family;
+                font-size: root.editor_font_size;
+            }
+        }
+    }
+}
+
+component StatusFooter inherits Rectangle {
+    in property <string> footer_text: "";
+    in property <string> ui_font_family: "IM FELL English";
+    in property <brush> panel_bg: #18171d;
+    in property <brush> theme_border: #3a3744;
+    in property <brush> muted_fg: #8f879f;
+    in property <length> footer_font_size: 13px;
+
+    height: 34px;
+    background: root.panel_bg;
+    border-width: 1px;
+    border-color: root.theme_border;
+
+    Text {
+        x: 12px;
+        y: 7px;
+        text: root.footer_text;
+        font-family: root.ui_font_family;
+        color: root.muted_fg;
+        font-size: root.footer_font_size;
+    }
+}
+
 export component AppWindow inherits Window {
     title: root.window_title;
-    // Use preferred size instead of fixed size so the desktop window stays resizable/maximizable[cite: 2].
     preferred-width: root.window_width;
     preferred-height: root.window_height;
     min-width: root.window_min_width;
@@ -45,7 +205,7 @@ export component AppWindow inherits Window {
 
     in-out property <string> input_text: "";
     in-out property <string> output_text: "";
-    in-out property <string> status_text: "Paste messy LLM / GitHub / HTML-markdown sludge on the left, then clean it.";
+    in-out property <string> status_text: "Paste messy LLM, GitHub, browser, or wiki Markdown on the left, then clean it.";
 
     // ------------------------------------------------------------
     // Window text
@@ -53,11 +213,11 @@ export component AppWindow inherits Window {
 
     in-out property <string> window_title: "LLM MD Cleaner";
     in-out property <string> app_title: "LLM MD Cleaner";
-    in-out property <string> app_subtitle: "A native Markdown cleanup utility for copied LLM output, broken code fences, flattened tables, & other LLM linsey-woolsey [nonsense].";
+    in-out property <string> app_subtitle: "A native Markdown cleanup utility for copied LLM output, broken code fences, flattened tables, and other linsey-woolsey nonsense.";
     in-out property <string> input_heading: "Messy Input";
     in-out property <string> input_hint: "Paste from ChatGPT, GitHub, browser copy, or wiki preview.";
     in-out property <string> output_heading: "Clean Markdown";
-    in-out property <string> output_hint: "Copy this into where you want your markdown";
+    in-out property <string> output_hint: "Copy this wherever your Markdown needs to go.";
     in-out property <string> footer_text: "LLM output in → cleaned Markdown out.";
 
     // ------------------------------------------------------------
@@ -102,15 +262,11 @@ export component AppWindow inherits Window {
 
     in-out property <length> window_width: 1180px;
     in-out property <length> window_height: 820px;
-    in-out property <length> window_min_width: 1130px;
+    in-out property <length> window_min_width: 920px;
     in-out property <length> window_min_height: 640px;
 
-    in-out property <length> root_padding: 30px;
+    in-out property <length> root_padding: 24px;
     in-out property <length> root_spacing: 16px;
-
-    // Fixed content viewport: stable, centered, and no layout recursion.
-    // 520px + 14px + 520px = 1054px.
-    in-out property <length> viewport_width: 1054px;
 
     in-out property <length> menu_bar_height: 40px;
     in-out property <length> menu_bar_padding_horizontal: 8px;
@@ -121,20 +277,12 @@ export component AppWindow inherits Window {
     in-out property <length> toolbar_padding_horizontal: 12px;
     in-out property <length> toolbar_padding_vertical: 8px;
     in-out property <length> toolbar_spacing: 10px;
-    in-out property <length> editor_panel_width: 520px;
-    in-out property <length> editor_panel_min_height: 430px;
-    in-out property <length> editor_inner_padding: 10px;
 
+    in-out property <length> editor_panel_min_width: 360px;
+    in-out property <length> editor_inner_padding: 10px;
     in-out property <length> panel_spacing: 8px;
     in-out property <length> split_spacing: 14px;
-    in-out property <length> heading_row_spacing: 8px;
     in-out property <length> heading_row_height: 30px;
-    in-out property <length> input_hint_x: 120px;
-    in-out property <length> output_hint_x: 220px;
-
-    in-out property <length> footer_height: 34px;
-    in-out property <length> footer_text_x: 12px;
-    in-out property <length> footer_text_y: 7px;
 
     // ------------------------------------------------------------
     // Callbacks
@@ -161,7 +309,6 @@ export component AppWindow inherits Window {
         spacing: 0px;
 
         // Custom Moribund menu row.
-        // This replaces Slint's native MenuBar so the menu color is controlled by the app theme.
         Rectangle {
             height: root.menu_bar_height;
             background: root.toolbar_bg;
@@ -302,37 +449,28 @@ export component AppWindow inherits Window {
             }
         }
 
-        HorizontalBox {
-            padding: root.root_padding;
-            alignment: center;
+        Rectangle {
             vertical-stretch: 1;
+            background: root.app_bg;
 
             VerticalBox {
-                width: root.viewport_width;
-                height: 100%;
+                x: root.root_padding;
+                y: root.root_padding;
+                width: parent.width - (root.root_padding * 2);
+                height: parent.height - (root.root_padding * 2);
                 spacing: root.root_spacing;
 
-                // Header
-                VerticalBox {
-                    spacing: root.header_spacing;
-                    Text {
-                        text: root.app_title;
-                        font-family: root.ui_font_family;
-                        font-size: root.title_font_size;
-                        font-weight: 700;
-                        color: root.heading_fg;
-                    }
-
-                    Text {
-                        text: root.app_subtitle;
-                        font-family: root.ui_font_family;
-                        font-size: root.subtitle_font_size;
-                        color: root.body_fg;
-                        wrap: word-wrap;
-                    }
+                HeaderBlock {
+                    title: root.app_title;
+                    subtitle: root.app_subtitle;
+                    ui_font_family: root.ui_font_family;
+                    heading_fg: root.heading_fg;
+                    body_fg: root.body_fg;
+                    title_font_size: root.title_font_size;
+                    subtitle_font_size: root.subtitle_font_size;
+                    header_spacing: root.header_spacing;
                 }
 
-                // Toolbar
                 Rectangle {
                     height: root.toolbar_height;
                     background: root.toolbar_bg;
@@ -346,22 +484,40 @@ export component AppWindow inherits Window {
                         padding-bottom: root.toolbar_padding_vertical;
                         spacing: root.toolbar_spacing;
 
-                        Button {
-                            min-width: 190px;
-                            text: root.clean_button_text;
-                            clicked => { root.clean_requested(); }
+                        ToolbarButton {
+                            button_min_width: 190px;
+                            label: root.clean_button_text;
+                            button_font_family: root.ui_font_family;
+                            button_bg: root.toolbar_bg;
+                            button_hover_bg: root.panel_bg;
+                            button_border: root.theme_border;
+                            button_text_fg: root.body_fg;
+                            button_hover_text_fg: root.heading_fg;
+                            activated => { root.clean_requested(); }
                         }
 
-                        Button {
-                            min-width: 190px;
-                            text: root.copy_button_text;
-                            clicked => { root.copy_requested(); }
+                        ToolbarButton {
+                            button_min_width: 190px;
+                            label: root.copy_button_text;
+                            button_font_family: root.ui_font_family;
+                            button_bg: root.toolbar_bg;
+                            button_hover_bg: root.panel_bg;
+                            button_border: root.theme_border;
+                            button_text_fg: root.body_fg;
+                            button_hover_text_fg: root.heading_fg;
+                            activated => { root.copy_requested(); }
                         }
 
-                        Button {
-                            min-width: 150px;
-                            text: root.clear_button_text;
-                            clicked => {
+                        ToolbarButton {
+                            button_min_width: 150px;
+                            label: root.clear_button_text;
+                            button_font_family: root.ui_font_family;
+                            button_bg: root.toolbar_bg;
+                            button_hover_bg: root.panel_bg;
+                            button_border: root.theme_border;
+                            button_text_fg: root.body_fg;
+                            button_hover_text_fg: root.heading_fg;
+                            activated => {
                                 root.input_text = "";
                                 root.output_text = "";
                                 root.status_text = "Cleared. Ready for fresh ritual debris.";
@@ -385,125 +541,58 @@ export component AppWindow inherits Window {
                     }
                 }
 
-                // Main split editor area
-                Rectangle {
-                    width: root.viewport_width;
-                    height: 100%;
+                HorizontalBox {
                     vertical-stretch: 1;
-                    background: root.app_bg;
+                    spacing: root.split_spacing;
 
-                    // Input panel
-                    Rectangle {
-                        x: 0px;
-                        y: 0px;
-                        width: root.editor_panel_width;
-                        height: parent.height;
-                        background: root.app_bg;
-
-                        Text {
-                            x: 0px;
-                            y: 0px;
-                            text: root.input_heading;
-                            font-family: root.ui_font_family;
-                            font-size: root.heading_font_size;
-                            font-weight: 700;
-                            color: root.heading_fg;
-                        }
-
-                        Text {
-                            x: root.input_hint_x;
-                            y: 4px;
-                            width: root.editor_panel_width - root.input_hint_x;
-                            text: root.input_hint;
-                            font-family: root.ui_font_family;
-                            font-size: root.hint_font_size;
-                            color: root.muted_fg;
-                        }
-
-                        Rectangle {
-                            x: 0px;
-                            y: root.heading_row_height + root.panel_spacing;
-                            background: root.panel_bg;
-                            border-width: 1px;
-                            border-color: root.theme_border;
-                            width: root.editor_panel_width;
-                            height: parent.height - root.heading_row_height - root.panel_spacing;
-                            TextEdit {
-                                text <=> root.input_text;
-                                width: parent.width - (root.editor_inner_padding * 2);
-                                height: parent.height - (root.editor_inner_padding * 2);
-                                x: root.editor_inner_padding;
-                                y: root.editor_inner_padding;
-                                font-family: root.editor_font_family;
-                                font-size: root.editor_font_size;
-                            }
-                        }
+                    EditorPane {
+                        heading: root.input_heading;
+                        hint: root.input_hint;
+                        editor_text <=> root.input_text;
+                        app_bg: root.app_bg;
+                        panel_bg: root.panel_bg;
+                        theme_border: root.theme_border;
+                        heading_fg: root.heading_fg;
+                        muted_fg: root.muted_fg;
+                        ui_font_family: root.ui_font_family;
+                        editor_font_family: root.editor_font_family;
+                        heading_font_size: root.heading_font_size;
+                        hint_font_size: root.hint_font_size;
+                        editor_font_size: root.editor_font_size;
+                        heading_row_height: root.heading_row_height;
+                        panel_spacing: root.panel_spacing;
+                        editor_inner_padding: root.editor_inner_padding;
+                        editor_panel_min_width: root.editor_panel_min_width;
                     }
 
-                    // Output panel
-                    Rectangle {
-                        x: root.editor_panel_width + root.split_spacing;
-                        y: 0px;
-                        width: root.editor_panel_width;
-                        height: parent.height;
-                        background: root.app_bg;
-
-                        Text {
-                            x: 0px;
-                            y: 0px;
-                            text: root.output_heading;
-                            font-family: root.ui_font_family;
-                            font-size: root.heading_font_size;
-                            font-weight: 700;
-                            color: root.heading_fg;
-                        }
-
-                        Text {
-                            x: root.output_hint_x;
-                            y: 4px;
-                            width: root.editor_panel_width - root.output_hint_x;
-                            text: root.output_hint;
-                            font-family: root.ui_font_family;
-                            font-size: root.hint_font_size;
-                            color: root.muted_fg;
-                        }
-
-                        Rectangle {
-                            x: 0px;
-                            y: root.heading_row_height + root.panel_spacing;
-                            background: root.panel_bg;
-                            border-width: 1px;
-                            border-color: root.theme_border;
-                            width: root.editor_panel_width;
-                            height: parent.height - root.heading_row_height - root.panel_spacing;
-                            TextEdit {
-                                text <=> root.output_text;
-                                width: parent.width - (root.editor_inner_padding * 2);
-                                height: parent.height - (root.editor_inner_padding * 2);
-                                x: root.editor_inner_padding;
-                                y: root.editor_inner_padding;
-                                font-family: root.editor_font_family;
-                                font-size: root.editor_font_size;
-                            }
-                        }
+                    EditorPane {
+                        heading: root.output_heading;
+                        hint: root.output_hint;
+                        editor_text <=> root.output_text;
+                        app_bg: root.app_bg;
+                        panel_bg: root.panel_bg;
+                        theme_border: root.theme_border;
+                        heading_fg: root.heading_fg;
+                        muted_fg: root.muted_fg;
+                        ui_font_family: root.ui_font_family;
+                        editor_font_family: root.editor_font_family;
+                        heading_font_size: root.heading_font_size;
+                        hint_font_size: root.hint_font_size;
+                        editor_font_size: root.editor_font_size;
+                        heading_row_height: root.heading_row_height;
+                        panel_spacing: root.panel_spacing;
+                        editor_inner_padding: root.editor_inner_padding;
+                        editor_panel_min_width: root.editor_panel_min_width;
                     }
                 }
 
-                // Footer
-                Rectangle {
-                    height: root.footer_height;
-                    background: root.panel_bg;
-                    border-width: 1px;
-                    border-color: root.theme_border;
-
-                    Text {
-                        text: root.footer_text;
-                        font-family: root.ui_font_family;
-                        x: root.footer_text_x;
-                        y: root.footer_text_y;
-                        color: root.muted_fg;
-                        font-size: root.footer_font_size;
-                    }
+                StatusFooter {
+                    footer_text: root.footer_text;
+                    ui_font_family: root.ui_font_family;
+                    panel_bg: root.panel_bg;
+                    theme_border: root.theme_border;
+                    muted_fg: root.muted_fg;
+                    footer_font_size: root.footer_font_size;
                 }
             }
         }

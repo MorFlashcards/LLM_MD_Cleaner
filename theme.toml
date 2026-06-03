@@ -1,25 +1,22 @@
 active_theme = "moribund"
 slint_style = "native"
 
-# UI chrome font: headings, labels, buttons, status text, etc.
-# Markdown editor boxes stay monospace below.
 ui_font = "IM FELL English"
 ui_font_file = "assets/fonts/IMFellEnglish-Regular.ttf"
 
-# Markdown editor font: messy input and clean Markdown output boxes.
 editor_font = "monospace"
-editor_font_size = 12.0
+editor_font_size = 14.0
 editor_font_file = ""
 
 [themes.moribund]
-app_background = "#181920"
-toolbar_background = "#14151c"
-panel_background = "#101117"
-border_color = "#2f3140"
-divider_color = "#3b4058"
-heading_color = "#a77be8"
-body_text_color = "#d7d4cf"
-muted_text_color = "#6f7388"
+app_background = "#222129"
+toolbar_background = "#2b2933"
+panel_background = "#18171d"
+border_color = "#3a3744"
+divider_color = "#4a4558"
+heading_color = "#a9aae2"
+body_text_color = "#bc8d6b"
+muted_text_color = "#8f879f"
 status_message = "Theme changed to Moribund."
 
 [themes.dark]
