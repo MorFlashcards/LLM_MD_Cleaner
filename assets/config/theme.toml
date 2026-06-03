@@ -1,20 +1,23 @@
 active_theme = "moribund"
 slint_style = "native"
 
-editor_font_family = "monospace"
-editor_font_size = 12.0
+ui_font = "IM FELL English"
+ui_font_file = "assets/fonts/IMFellEnglish-Regular.ttf"
+
+editor_font = "monospace"
+editor_font_size = 14.0
 editor_font_file = ""
 
 [themes.moribund]
-app_background = "#282a36"
-toolbar_background = "#21222c"
-panel_background = "#1e1f28"
-border_color = "#44475a"
-divider_color = "#6272a4"
-heading_color = "#bd93f9"
-body_text_color = "#f8f8f2"
-muted_text_color = "#8b8fa6"
-status_message = "Theme changed to Moribund Dracula."
+app_background = "#222129"
+toolbar_background = "#2b2933"
+panel_background = "#18171d"
+border_color = "#3a3744"
+divider_color = "#4a4558"
+heading_color = "#a9aae2"
+body_text_color = "#bc8d6b"
+muted_text_color = "#8f879f"
+status_message = "Theme changed to Moribund."
 
 [themes.dark]
 app_background = "#1e1e1e"

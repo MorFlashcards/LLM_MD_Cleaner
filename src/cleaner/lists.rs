@@ -27,16 +27,26 @@ pub(super) fn fix_lists(input: &str) -> String {
             continue;
         }
 
-        if !is_loose_list_candidate(trimmed) {
+        if !is_loose_list_start_candidate(trimmed) {
             out.push(lines[i].to_string());
             i += 1;
             continue;
         }
 
         let start = i;
+        let mut item_count = 0;
 
-        while i < lines.len() && is_loose_list_candidate(lines[i].trim()) {
-            i += 1;
+        while i < lines.len() {
+            let candidate = lines[i].trim();
+
+            if is_loose_list_start_candidate(candidate)
+                || (item_count > 0 && is_loose_list_continuation_candidate(candidate))
+            {
+                item_count += 1;
+                i += 1;
+            } else {
+                break;
+            }
         }
 
         let block_len = i - start;
@@ -82,9 +92,34 @@ fn fix_jammed_bullet_marker(line: &str) -> Option<String> {
     }
 }
 
-fn is_loose_list_candidate(trimmed: &str) -> bool {
-    if trimmed.is_empty()
-        || trimmed.len() > 100
+fn is_loose_list_start_candidate(trimmed: &str) -> bool {
+    if !is_plain_loose_list_line(trimmed) {
+        return false;
+    }
+
+    let starts_like_sentence_fragment = starts_with_lowercase(trimmed);
+
+    (starts_like_sentence_fragment && (trimmed.ends_with(',') || trimmed.ends_with(';')))
+        || (trimmed.starts_with("no ") && (trimmed.ends_with(',') || trimmed.ends_with('.')))
+}
+
+fn is_loose_list_continuation_candidate(trimmed: &str) -> bool {
+    if !is_plain_loose_list_line(trimmed) || !starts_with_lowercase(trimmed) {
+        return false;
+    }
+
+    // When a loose list has already started, the final item often ends with a
+    // period instead of a comma:
+    //
+    // where files live,
+    // how folders relate,
+    // why the theme exists.
+    trimmed.ends_with(',') || trimmed.ends_with(';') || trimmed.ends_with('.')
+}
+
+fn is_plain_loose_list_line(trimmed: &str) -> bool {
+    !(trimmed.is_empty()
+        || trimmed.len() > 120
         || is_fence_line(trimmed)
         || trimmed.starts_with('#')
         || trimmed.starts_with('>')
@@ -92,19 +127,15 @@ fn is_loose_list_candidate(trimmed: &str) -> bool {
         || trimmed.starts_with("- ")
         || trimmed.starts_with("* ")
         || trimmed.starts_with("+ ")
-        || starts_with_numbered_list_marker(trimmed)
-    {
-        return false;
-    }
+        || starts_with_numbered_list_marker(trimmed))
+}
 
-    let starts_like_sentence_fragment = trimmed
+fn starts_with_lowercase(trimmed: &str) -> bool {
+    trimmed
         .chars()
         .next()
         .map(|ch| ch.is_ascii_lowercase())
-        .unwrap_or(false);
-
-    (starts_like_sentence_fragment && (trimmed.ends_with(',') || trimmed.ends_with(';')))
-        || (trimmed.starts_with("no ") && (trimmed.ends_with(',') || trimmed.ends_with('.')))
+        .unwrap_or(false)
 }
 
 fn starts_with_numbered_list_marker(trimmed: &str) -> bool {
