@@ -270,7 +270,11 @@ fn register_configured_font(ui: &AppWindow, label: &str, configured_path: &str) 
         }
     } else {
         ui.set_status_text(
-            format!("Configured {label} font file was not found: {}", path.display()).into(),
+            format!(
+                "Configured {label} font file was not found: {}",
+                path.display()
+            )
+            .into(),
         );
     }
 }
